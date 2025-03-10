@@ -1,30 +1,31 @@
-# Créé par saliha.ucmak, le 20/02/2025 avec EduPython
-from pydub import AudioSegment
+import wave
+import numpy as np
+import matplotlib.pyplot as plt
 
-# Charger un fichier audio
-sound = AudioSegment.from_file("ton_fichier_audio.mp3")
+# Ouvrir le fichier audio WAV
+file_path = 'waves.wav'
 
-# Afficher des informations sur l'audio (durée en ms, nombre de canaux, etc.)
-print("Durée en ms:", len(sound))
-print("Canaux:", sound.channels)
-print("Fréquence d'échantillonnage:", sound.frame_rate)
+with wave.open(file_path, 'rb') as audio_file:
+    # Extraire les paramètres du fichier audio
+    n_channels = audio_file.getnchannels()
+    sample_width = audio_file.getsampwidth()
+    frame_rate = audio_file.getframerate()
+    n_frames = audio_file.getnframes()
 
-# Obtenir un tableau d'échantillons sonores
-samples = sound.get_array_of_samples()
+    # Lire les données audio
+    audio_data = audio_file.readframes(n_frames)
+    audio_samples = np.frombuffer(audio_data, dtype=np.int16)
 
-# Afficher quelques valeurs des échantillons
-print(samples[:10])  # Affiche les 10 premiers échantillons
+    # Affichage des informations du fichier
+    print(f"Nombre de canaux: {n_channels}")
+    print(f"Largeur d'échantillon (en octets): {sample_width}")
+    print(f"Fréquence d'échantillonnage: {frame_rate} Hz")
+    print(f"Nombre de frames (échantillons): {n_frames}")
 
-import librosa
-
-# Charger un fichier audio
-audio_path = 'ton_fichier_audio.wav'
-y, sr = librosa.load(audio_path)
-
-# Afficher les informations
-print("Durée en secondes:", librosa.get_duration(y=y, sr=sr))
-print("Fréquence d'échantillonnage:", sr)
-
-# y contient les échantillons audio sous forme d'un tableau numpy
-print("Quelques valeurs des échantillons:", y[:10])
-
+# Tracer un extrait des ondes (afficher les 1000 premiers échantillons)
+plt.plot(audio_samples[:audio_file.getnframes()])
+plt.title("Extrait des ondes sonores")
+plt.xlabel("Échantillons")
+plt.ylabel("Amplitude")
+plt.show()
+audio_samples = audio_samples / np.max(np.abs(audio_samples))
