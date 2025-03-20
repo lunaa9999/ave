@@ -1,31 +1,61 @@
-import wave
 import numpy as np
-import matplotlib.pyplot as plt
+import librosa
+import json
+import os
+import argparse
 
-# Ouvrir le fichier audio WAV
-file_path = 'waves.wav'
-
-with wave.open(file_path, 'rb') as audio_file:
-    # Extraire les paramètres du fichier audio
-    n_channels = audio_file.getnchannels()
-    sample_width = audio_file.getsampwidth()
-    frame_rate = audio_file.getframerate()
-    n_frames = audio_file.getnframes()
-
-    # Lire les données audio
-    audio_data = audio_file.readframes(n_frames)
-    audio_samples = np.frombuffer(audio_data, dtype=np.int16)
-
-    # Affichage des informations du fichier
-    print(f"Nombre de canaux: {n_channels}")
-    print(f"Largeur d'échantillon (en octets): {sample_width}")
-    print(f"Fréquence d'échantillonnage: {frame_rate} Hz")
-    print(f"Nombre de frames (échantillons): {n_frames}")
-
-# Tracer un extrait des ondes (afficher les 1000 premiers échantillons)
-plt.plot(audio_samples[:audio_file.getnframes()])
-plt.title("Extrait des ondes sonores")
-plt.xlabel("Échantillons")
-plt.ylabel("Amplitude")
-plt.show()
-audio_samples = audio_samples / np.max(np.abs(audio_samples))
+def create_music_visualization(audio_file):
+    """
+    Analyser un fichier audio et générer une visualisation web
+    """
+    print(f"Analyse du fichier: {audio_file}")
+    
+    # Créer le dossier de sortie
+    output_dir = "visualisation_audio"
+    os.makedirs(output_dir, exist_ok=True)
+    
+    try:
+        # Charger et analyser le fichier audio
+        y, sr = librosa.load(audio_file)
+        
+        # Calculer le spectrogramme
+        D = np.abs(librosa.stft(y))
+        spectrogram = librosa.amplitude_to_db(D, ref=np.max)
+        
+        # Obtenir le tempo et les beats
+        tempo, beat_frames = librosa.beat.beat_track(y=y, sr=sr)
+        beat_times = librosa.frames_to_time(beat_frames, sr=sr)
+        
+        # Calculer les caractéristiques de fréquence
+        chromagram = librosa.feature.chroma_stft(y=y, sr=sr)
+        
+        # Préparer les données pour le JavaScript
+        data = {
+            "filename": os.path.basename(audio_file),
+            "duration": float(librosa.get_duration(y=y, sr=sr)),
+            "tempo": float(tempo),
+            "beats": beat_times.tolist(),
+            "spectrogram": {
+                "data": spectrogram.tolist(),
+                "time_bins": spectrogram.shape[1],
+                "freq_bins": spectrogram.shape[0]
+            },
+            "chromagram": chromagram.tolist()
+        }
+        
+        # Convertir les données en JSON pour le JavaScript
+        js_data = f"const audioData = {json.dumps(data)};"
+        
+        with open(f"{output_dir}/audio_data.js", "w") as f:
+            f.write(js_data)
+        
+        # Créer les fichiers HTML, CSS et JS
+        create_html_file(output_dir)
+        create_css_file(output_dir)
+        create_js_file(output_dir)
+        
+        print(f"Visualisation créée avec succès dans le dossier '{output_dir}'")
+        print(f"Ouvrez 'visualisation_audio/index.html' dans votre navigateur pour voir la visualisation")
+        
+    except Exception as e:
+        print(f"Erreur lors de l'analyse du fichier audio: {e}")
