@@ -1,3 +1,10 @@
+# Downloaded music and data
+downloads/
+
+# Audio data
+site/audio_data.js
+site/spectrogram.png
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

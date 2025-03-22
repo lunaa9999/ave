@@ -8,135 +8,175 @@ from pathlib import Path
 import subprocess
 import platform
 
-def create_music_visualization(audio_file):
-    """
-    Analyser un fichier audio et générer une visualisation web complète
-    """
-    print(f"Analyse du fichier: {audio_file}")
-    
-    try:
-        # Charger et analyser le fichier audio
-        print("Chargement du fichier audio...")
-        y, sr = librosa.load(audio_file)
-        print(f"Fichier audio chargé. Taux d'échantillonnage: {sr}Hz")
-        
-        print("Extraction des caractéristiques audio...")
-        # Calculer le spectrogramme
-        D = np.abs(librosa.stft(y))
-        spectrogram = librosa.amplitude_to_db(D, ref=np.max)
-        
-        # Obtenir le tempo et les beats
-        tempo, beat_frames = librosa.beat.beat_track(y=y, sr=sr)
-        beat_times = librosa.frames_to_time(beat_frames, sr=sr)
-        
-        # Calculer les caractéristiques de fréquence
-        chromagram = librosa.feature.chroma_stft(y=y, sr=sr)
-        
-        # Extraire l'énergie par segments
-        frame_length = 1024
-        hop_length = 512
-        rms = librosa.feature.rms(y=y, frame_length=frame_length, hop_length=hop_length)[0]
-        
-        # Préparer les données pour le JavaScript
-        print("Préparation des données pour la visualisation...")
-        data = {
-            "filename": os.path.basename(audio_file),
-            "duration": float(librosa.get_duration(y=y, sr=sr)),
-            "tempo": float(tempo),
-            "beats": beat_times.tolist(),
-            "spectrogram": {
-                "data": spectrogram.tolist(),
-                "time_bins": spectrogram.shape[1],
-                "freq_bins": spectrogram.shape[0]
-            },
-            "chromagram": chromagram.tolist(),
-            "energy": rms.tolist()
-        }
-        
-        # Convertir les données en JSON pour le JavaScript
-        js_data = f"const audioData = {json.dumps(data)};"
-        
-        # Écrire les données dans le fichier JS
-        print("Écriture des données dans audio_data.js...")
-        with open(f"site/audio_data.js", "w") as f:
-            f.write(js_data)
-        
-        # Chemin complet vers le fichier HTML
-        html_path = os.path.abspath(f"site/index.html")
-        
-        print(f"Ouverture de la visualisation dans votre navigateur...")
-        
-        # Ouvrir le fichier HTML dans le navigateur
-        # webbrowser.open('file://' + html_path)
-        
-        return True
-        
-    except Exception as e:
-        print(f"Erreur lors de l'analyse du fichier audio: {e}")
-        return False
+from src.music_finder import MusicFinder
+from src.music_processor import MusicProcessor
 
 
-def install_required_packages():
-    """Vérifie et installe les packages requis si nécessaire"""
+#SUPPORTED_EXTENSIONS = ".wav/.mp3"
+HTML_PATH = "site/index.html"
+
+def process_audio(json_info: str):
+    info = None
+    with open(json_info, "r") as f:
+        info = json.load(f)
+
+    if not info:
+        print("Fatal Error: No info was found in the JSON file. Exiting...") # TODO: make it more beautiful? this is not that kinda error handling i'd like to see
+        exit()
+
+    music_processor = MusicProcessor(info["audio_path"])
+    tempo = music_processor.calculate_tempo()
+    duration = music_processor.calculate_duration()
+
+    info['sample_duration'] = duration
+
+    if "tempo" in info:
+        tempo = info["tempo"]
+        print(f"Actual tempo provided: {tempo} BPM")
+    else:
+        info['tempo'] = tempo
+
+    tempo_description = "Very slow" if tempo < 70 else "Slow" if tempo < 90 else "Moderate" if tempo < 120 else "Fast" if tempo < 150 else "Very fast"
+    info["tempo_description"] = tempo_description
+
+    bar_values = music_processor.create_frequency_bars() # TODO: Make number of bars configurable for the user?
+    spectrogram_uri = music_processor.create_spectrogram(tempo) # TODO: Make the arguments configurable?
+
+    info['barValues'] = bar_values
+    info['spectrogramUri'] = spectrogram_uri
+
+    js_data = f"const audioData = {json.dumps(info)};"
+    with open(f"site/audio_data.js", "w") as f:
+        f.write(js_data)
+
+    webbrowser.open(Path(HTML_PATH).absolute().as_uri())
+
+
+def search_song():
+    """" Searches for a song and downloads it, as well as other useful info. Returns the path to the downloaded song or None if no song was downloaded. """
+    finder = MusicFinder()
+
     try:
-        import pip
-        
-        required_packages = ["numpy", "librosa", "soundfile"]
-        
-        for package in required_packages:
-            try:
-                __import__(package)
-                print(f"Le package {package} est déjà installé.")
-            except ImportError:
-                print(f"Installation du package {package}...")
-                subprocess.check_call([sys.executable, "-m", "pip", "install", package])
-                print(f"Package {package} installé avec succès.")
-    except Exception as e:
-        print(f"Erreur lors de l'installation des packages: {e}")
-        print("Veuillez installer manuellement les packages requis avec la commande:")
-        print("pip install numpy librosa soundfile")
+        query = input("Enter song name to search: ")
+    except ValueError:
+        print("Invalid input.")
+        exit()
+
+    results = finder.search_song(query)
+    if not results:
+        print("No results found.")
+        return None
+
+    finder.display_results()
+
+    while True:
+        try:
+            finder.display_results()
+            choice = input("\nEnter number to get song info (or 'q' to quit): ")
+            if choice.lower() == 'q':
+                print("Exiting program.")
+                exit()
+
+            choice = int(choice)
+
+            if 1 <= choice <= len(results):
+                selected = results[choice-1]
+                print(f"\nSelected: {selected['title']} by {selected['artist']}")
+
+                audio_file = finder.download(selected)
+                if not audio_file:
+                    print("No audio file was downloaded.")
+                    return None
+
+                file_path = Path(audio_file).absolute()
+                selected['audio_uri'] = file_path.as_uri()
+                selected['audio_path'] = str(file_path)
+
+                return finder.save_result_info(selected)
+            else:
+                print(f"Please enter a number between 1 and {len(results)}.")
+
+        except ValueError:
+            print("Please enter a valid number or 'q' to quit.")
+        except KeyboardInterrupt:
+            print("\nExiting program.")
+            exit()
+
+    return audio_file
 
 if __name__ == "__main__":
-    # Vérifier si des arguments ont été fournis
-    if len(os.sys.argv) < 2:
-        print("Utilisation: python visualiseur_audio.py chemin/vers/fichier_audio.mp3")
-        
-        # Liste des extensions audio supportées
-        supported_extensions = [".wav", ".mp3", ".ogg", ".flac", ".m4a"]
-        
-        # Chercher automatiquement des fichiers audio dans le répertoire courant
-        print("\nRecherche de fichiers audio dans le répertoire courant...")
-        audio_files = []
-        for ext in supported_extensions:
-            audio_files.extend(list(Path(".").glob(f"*{ext}")))
-        
-        if audio_files:
-            print("\nFichiers audio trouvés:")
-            for i, file in enumerate(audio_files):
-                print(f"{i+1}. {file}")
-            
+    #print(f"Looking for audio files in the current and 'downloads' directory (supported extensions: {SUPPORTED_EXTENSIONS})...")
+    print(f"Looking for audio files in the 'downloads' directory...")
+
+    data_files = []
+    data_file = ""
+
+    #for ext in SUPPORTED_EXTENSIONS.split("/"):
+        # audio_files.extend(list(Path(".").glob(f"*{ext}"))) I dont wanna longer support this, downloading is easier
+        #audio_files.extend(list(Path("./downloads").glob(f"*{ext}")))
+
+    data_files.extend(list(Path("./downloads").glob(f"*json")))
+
+    if not data_files:
+        print("No audio files found in the current nor 'downloads' directory.")
+        print("Would you like to download a song?")
+
+        while True:
             try:
-                choice = int(input("\nSélectionnez un fichier par son numéro (ou 0 pour quitter): "))
-                if 1 <= choice <= len(audio_files):
-                    audio_file = str(audio_files[choice-1])
-                    print(f"\nTraitement du fichier: {audio_file}")
-                    create_music_visualization(audio_file)
+                answer = input("Y/es or N/o: ").lower()
+                if answer == "y" or answer == "yes":
+                    data_file = search_song()
+                    if data_file:
+                        process_audio(data_file)
                 else:
-                    print("Sélection invalide ou annulée.")
+                    print("Exiting program.")
+                    exit()
             except ValueError:
-                print("Entrée invalide.")
-        else:
-            print("Aucun fichier audio trouvé dans le répertoire courant.")
+                print("Invalid input.")
+                exit()
+            except KeyboardInterrupt:
+                print("\nExiting program.")
+                exit()
+
+    print("Found audio files in the current directory:\n")
+    for i, file in enumerate(data_files):
+        print(f"{i+1}. {Path(file).stem}")
+
+    print("0. Download a song!")
+
+    while True:
+        try:
+            choice = input("\nMake your choice (or 'q' to quit): ")
+            if choice.lower() == "q":
+                print("Exiting program.")
+                exit()
+
+            choice = int(choice)
+
+            if not (0 <= choice <= len(data_files)):
+                print(f"Please enter a number between 0 and {len(data_files)}.")
+            else: break
+
+        except ValueError:
+            print(f"Please enter a number between 0 and {len(data_files)}.")
+        except KeyboardInterrupt:
+            print("\nExiting program.")
+            exit()
+
+    audio_file = ""
+
+    if choice == 0:
+        audio_file = search_song()
+    elif 1 <= choice <= len(data_files):
+        audio_file = str(data_files[choice - 1])
     else:
-        audio_file = os.sys.argv[1]
-        
-        # Vérifier si le fichier existe
-        if not os.path.exists(audio_file):
-            print(f"Erreur: Le fichier '{audio_file}' n'existe pas.")
-        else:
-            # Essayer d'installer les packages requis
-            import sys
-            install_required_packages()
-            
-            # Créer la visualisation
-            create_music_visualization(audio_file)
+        print("Invalid input.")
+
+    if audio_file:
+        process_audio(audio_file)
+    else:
+        print("No song was downloaded or selected, exiting...")
+        exit()
+
+else:
+    print("This script is not meant to be imported.")
