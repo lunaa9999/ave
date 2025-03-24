@@ -1,0 +1,46 @@
+name: Formatter
+on: push
+jobs:
+  python-code-format:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.13.2"
+          architecture: "x64"
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "22"
+
+      - name: Display Python version
+        run: python --version
+
+      - name: Install packages
+        run: pip install black autopep8 isort
+
+      - name: Python Formatter
+        run: |
+          black .
+          autopep8 --recursive --in-place --aggressive --aggressive .
+          isort .
+
+      - name: JavaScript Formatter
+        run: npx prettier --write **/*.js
+
+      - name: HTML Formatter
+        run: npx prettier --write **/*.html
+
+      - name: CSS Formatter
+        run: npx prettier --write **/*.css
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v3
+        with:
+          commit-message: (CI) Automatic code formatting.
+          title: (CI) Automatic code formatting.
+          body: This is an auto-generated PR.
+          labels: ci format
+          branch: python-code-format-patches
