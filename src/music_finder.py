@@ -9,10 +9,14 @@ from urllib.parse import quote
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
+from src.utils import Utils
+
+
 class MusicFinder:
     def __init__(self):
         self.search_results = []
         self.output_dir = "downloads" # TODO: Make it configurable? Requires changes at the level of the main.py (as we search for audio files in 'downloads' by default)
+        self.selected_song_name = None
 
     def search_with_deezer(self, query, limit=5):
         url = f"https://api.deezer.com/search?q={quote(query)}&limit={limit}"
@@ -82,8 +86,14 @@ class MusicFinder:
 
         try:
             print(f"Downloading preview for: {result['title']} - {result['artist']}")
-            filename = f"{self.output_dir}/{result['artist']} - {result['title']}.mp3"
-            filename = ''.join(c for c in filename if c.isalnum() or c in "_ -./")
+
+            # Otherwise the filesystem will get reeeal angry
+            artist = Utils.remove_special_characters(result['artist'])
+            title = Utils.remove_special_characters(result['title'])
+
+            self.selected_song_name = f"{artist} - {title}"
+
+            filename = f"{self.output_dir}/{self.selected_song_name}.mp3"
 
             response = requests.get(result['preview_url'], stream=True)
             response.raise_for_status()
@@ -122,8 +132,7 @@ class MusicFinder:
             # Get enhanced information
             result = self.get_enhanced_info(result)
 
-            filename = f"{self.output_dir}/{result['artist']} - {result['title']}.json"
-            filename = ''.join(c for c in filename if c.isalnum() or c in "_ -./")
+            filename = f"{self.output_dir}/{self.selected_song_name}.json"
 
             with open(filename, 'w') as f:
                 json.dump(result, f, indent=2)
