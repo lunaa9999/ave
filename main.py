@@ -67,8 +67,6 @@ def search_song():
         print("No results found.")
         return None
 
-    finder.display_results()
-
     while True:
         try:
             finder.display_results()
@@ -128,6 +126,7 @@ if __name__ == "__main__":
                     data_file = search_song()
                     if data_file:
                         process_audio(data_file)
+                        exit()
                 else:
                     print("Exiting program.")
                     exit()
