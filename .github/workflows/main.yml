@@ -1,5 +1,9 @@
 name: Formatter
-on: push
+on:
+  push:
+    branches: main
+  workflow_dispatch:
+  
 jobs:
   python-code-format:
     runs-on: ubuntu-20.04
