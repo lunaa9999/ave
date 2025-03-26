@@ -98,7 +98,8 @@ def search_song():
                 print(
                     f"\nSelected: {
                         selected['title']} by {
-                        selected['artist']}")
+                        selected['artist']}"
+                )
 
                 audio_file = finder.download(selected)
                 if not audio_file:
@@ -175,7 +176,8 @@ if __name__ == "__main__":
             if not (0 <= choice <= len(data_files)):
                 print(
                     f"Please enter a number between 0 and {
-                        len(data_files)}.")
+                        len(data_files)}."
+                )
             else:
                 break
 
