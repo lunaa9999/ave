@@ -1,110 +1,110 @@
 body {
-    font-family: "Arial", sans-serif;
-    background-color: #121212;
-    color: #ffffff;
-    margin: 0;
-    padding: 0;
+  font-family: "Arial", sans-serif;
+  background-color: #121212;
+  color: #ffffff;
+  margin: 0;
+  padding: 0;
 }
 .container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
 }
 h1,
 h2 {
-    text-align: center;
-    color: #1db954;
+  text-align: center;
+  color: #1db954;
 }
 .info-panel {
-    background-color: #282828;
-    border-radius: 8px;
-    padding: 15px;
-    margin-bottom: 20px;
-    display: flex;
-    justify-content: space-around;
-    flex-wrap: wrap;
+  background-color: #282828;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-around;
+  flex-wrap: wrap;
 }
 .info-item {
-    margin: 5px 10px;
+  margin: 5px 10px;
 }
 .info-label {
-    font-weight: bold;
-    margin-right: 5px;
+  font-weight: bold;
+  margin-right: 5px;
 }
 .viz-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-    gap: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 20px;
 }
 .viz-box {
-    background-color: #282828;
-    border-radius: 8px;
-    padding: 15px;
-    min-height: 300px;
+  background-color: #282828;
+  border-radius: 8px;
+  padding: 15px;
+  min-height: 300px;
 }
 #frequency-viz {
-    display: flex;
-    height: 200px;
-    align-items: flex-end;
-    justify-content: space-between;
-    padding: 10px 0;
+  display: flex;
+  height: 200px;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 10px 0;
 }
 .freq-bar {
-    background: linear-gradient(to top, #8b287b, #ff00ea);
-    width: 8px;
-    margin: 0 2px;
-    border-radius: 2px 2px 0 0;
-    transition: height 0.1s ease;
+  background: linear-gradient(to top, #8b287b, #ff00ea);
+  width: 8px;
+  margin: 0 2px;
+  border-radius: 2px 2px 0 0;
+  transition: height 0.1s ease;
 }
 #spectrogram {
-    width: 100%;
-    height: 200px;
+  width: 100%;
+  height: 200px;
 }
 #pulse-container {
-    position: relative;
-    width: 100%;
-    height: 200px;
-    overflow: hidden;
-    background-color: rgba(0, 0, 0, 0.2);
-    border-radius: 4px;
-    margin-top: 10px;
+  position: relative;
+  width: 100%;
+  height: 200px;
+  overflow: hidden;
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  margin-top: 10px;
 }
 .pulse-circle {
-    position: absolute;
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    opacity: 0;
-    animation: pulse 2s ease-out;
-    will-change: transform, opacity;
+  position: absolute;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  opacity: 0;
+  animation: pulse 2s ease-out;
+  will-change: transform, opacity;
 }
 @keyframes pulse {
-    0% {
-        transform: scale(0.1);
-        opacity: 0;
-    }
-    50% {
-        opacity: 0.8;
-    }
-    100% {
-        transform: scale(1.5);
-        opacity: 0;
-    }
+  0% {
+    transform: scale(0.1);
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
 }
 .spectrogram-wrapper {
-    width: 100%;
-    height: 200px;
-    display: flex;
-    justify-content: center;
-    align-items: flex-end;
-    background-color: transparent;
-    border-radius: 4px;
-    overflow: hidden;
+  width: 100%;
+  height: 200px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  background-color: transparent;
+  border-radius: 4px;
+  overflow: hidden;
 }
 #spectrogram-img {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-    object-position: bottom;
-    display: block;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  object-position: bottom;
+  display: block;
 }

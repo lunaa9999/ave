@@ -1,13 +1,14 @@
-import os
-import sys
-import json
 import argparse
 import base64
-import requests
+import json
+import os
+import sys
 import webbrowser
-from urllib.parse import quote
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from urllib.parse import quote
+
+import requests
 
 from src.utils import Utils
 
@@ -15,7 +16,9 @@ from src.utils import Utils
 class MusicFinder:
     def __init__(self):
         self.search_results = []
-        self.output_dir = "downloads" # TODO: Make it configurable? Requires changes at the level of the main.py (as we search for audio files in 'downloads' by default)
+        # TODO: Make it configurable? Requires changes at the level of the
+        # main.py (as we search for audio files in 'downloads' by default)
+        self.output_dir = "downloads"
         self.selected_song_name = None
 
     def search_with_deezer(self, query, limit=5):
@@ -27,15 +30,17 @@ class MusicFinder:
 
             results = []
             for i, item in enumerate(json_result.get("data", [])):
-                results.append({
-                    'id': i + 1,
-                    'title': item["title"],
-                    'artist': item["artist"]["name"],
-                    'album': item["album"]["title"],
-                    'duration': item.get("duration"),
-                    'preview_url': item.get("preview"),
-                    'deezer_id': item["id"],
-                })
+                results.append(
+                    {
+                        "id": i + 1,
+                        "title": item["title"],
+                        "artist": item["artist"]["name"],
+                        "album": item["album"]["title"],
+                        "duration": item.get("duration"),
+                        "preview_url": item.get("preview"),
+                        "deezer_id": item["id"],
+                    }
+                )
             return results
         except Exception as e:
             print(f"Error searching with Deezer: {str(e)}")
@@ -72,12 +77,14 @@ class MusicFinder:
         print("-" * 80)
 
         for result in self.search_results:
-            print(f"{result['id']}. {result['title']} - {result['artist']} ({result['album']})")
+            print(
+                f"{result['id']}. {result['title']} - {result['artist']} ({result['album']})"
+            )
 
         print("-" * 80)
 
     def download(self, result):
-        if not result.get('preview_url'):
+        if not result.get("preview_url"):
             print("No URL available for this track.")
             return None
 
@@ -85,20 +92,21 @@ class MusicFinder:
             os.makedirs(self.output_dir)
 
         try:
-            print(f"Downloading preview for: {result['title']} - {result['artist']}")
+            print(
+                f"Downloading preview for: {result['title']} - {result['artist']}")
 
             # Otherwise the filesystem will get reeeal angry
-            artist = Utils.remove_special_characters(result['artist'])
-            title = Utils.remove_special_characters(result['title'])
+            artist = Utils.remove_special_characters(result["artist"])
+            title = Utils.remove_special_characters(result["title"])
 
             self.selected_song_name = f"{artist} - {title}"
 
             filename = f"{self.output_dir}/{self.selected_song_name}.mp3"
 
-            response = requests.get(result['preview_url'], stream=True)
+            response = requests.get(result["preview_url"], stream=True)
             response.raise_for_status()
 
-            with open(filename, 'wb') as f:
+            with open(filename, "wb") as f:
                 for chunk in response.iter_content(chunk_size=1024):
                     if chunk:
                         f.write(chunk)
@@ -112,14 +120,15 @@ class MusicFinder:
     def get_enhanced_info(self, result):
         enhanced_info = result.copy()
 
-        if result.get('deezer_id'):
-            track_info = self.get_deezer_track_info(result['deezer_id'])
+        if result.get("deezer_id"):
+            track_info = self.get_deezer_track_info(result["deezer_id"])
             if track_info:
-                if track_info.get('bpm'):
-                    enhanced_info['tempo'] = track_info.get('bpm')
+                if track_info.get("bpm"):
+                    enhanced_info["tempo"] = track_info.get("bpm")
 
-                if track_info.get('release_date'):
-                    enhanced_info['release_date'] = track_info.get('release_date')
+                if track_info.get("release_date"):
+                    enhanced_info["release_date"] = track_info.get(
+                        "release_date")
 
         return enhanced_info
 
@@ -134,7 +143,7 @@ class MusicFinder:
 
             filename = f"{self.output_dir}/{self.selected_song_name}.json"
 
-            with open(filename, 'w') as f:
+            with open(filename, "w") as f:
                 json.dump(result, f, indent=2)
 
             print(f"Song info saved to: {Path(filename).absolute()}")
