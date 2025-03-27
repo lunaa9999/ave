@@ -131,6 +131,27 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
+  function setDynamicHeadingColors(colors) {
+    // Select all h1 and h2 elements
+    const headings = document.querySelectorAll('h1, h2');
+    
+    // Create a linear gradient with the provided colors
+    const gradient = `linear-gradient(to right, ${colors[0]}, ${colors[1]}, ${colors[2]}, ${colors[3]})`;
+    
+    // Create a style tag to apply the gradient text color
+    const styleTag = document.createElement('style');
+    styleTag.textContent = `
+      h1, h2 {
+        background: ${gradient};
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    text-align: center;
+      }
+    `;
+    document.head.appendChild(styleTag);
+  }
+
   function createPulseAnimation() {
     // Get container and clear any existing pulse circles
     const container = document.getElementById("pulse-container");
@@ -203,6 +224,8 @@ document.addEventListener("DOMContentLoaded", function () {
       ];
     }
 
+    setDynamicHeadingColors(colors);
+
     // Dynamically set volume slider gradient
     volumeSlider.style.background = `linear-gradient(to right, ${colors[0]}, ${colors[1]}, ${colors[2]}, ${colors[3]})`;
     volumeSlider.style.backgroundImage = `linear-gradient(to right, ${colors[0]}, ${colors[1]}, ${colors[2]}, ${colors[3]})`;
@@ -221,7 +244,6 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     `;
     document.head.appendChild(styleTag);
-
 
     // Function to create a pulse circle
     function createPulseCircle() {
