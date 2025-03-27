@@ -136,11 +136,22 @@ document.addEventListener("DOMContentLoaded", function () {
     const container = document.getElementById("pulse-container");
     container.innerHTML = "";
 
-    // Create audio element and set it up
+    // Get volume slider and display elements
+    const volumeSlider = document.getElementById("volume-slider");
+    const volumeValue = document.getElementById("volume-value");
+
     const audioElement = new Audio(audioData.audio_uri);
-    audioElement.volume = 0.1;
+    audioElement.volume = parseFloat(volumeSlider.value) / 100;
     audioElement.controls = false;
     audioElement.autoplay = true;
+	
+	  // Volume slider event listener
+    volumeSlider.addEventListener("input", function() {
+      const volume = parseFloat(this.value) / 100;
+      audioElement.volume = volume;
+      volumeValue.textContent = `${this.value}%`;
+    });
+
 
     // Get tempo from audioData
     const tempo = audioData.tempo || 120; // Default to 120 if not available
@@ -191,6 +202,26 @@ document.addEventListener("DOMContentLoaded", function () {
         "rgb(178, 4, 4)", // Dark red
       ];
     }
+
+    // Dynamically set volume slider gradient
+    volumeSlider.style.background = `linear-gradient(to right, ${colors[0]}, ${colors[1]}, ${colors[2]}, ${colors[3]})`;
+    volumeSlider.style.backgroundImage = `linear-gradient(to right, ${colors[0]}, ${colors[1]}, ${colors[2]}, ${colors[3]})`;
+
+    // Set slider thumb color to be the middle color
+    volumeSlider.style.setProperty('--thumb-color', colors[1]);
+
+    // Inject a style to handle the thumb color
+    const styleTag = document.createElement('style');
+    styleTag.textContent = `
+      #volume-slider::-webkit-slider-thumb {
+        background: ${colors[1]} !important;
+      }
+      #volume-slider::-moz-range-thumb {
+        background: ${colors[1]} !important;
+      }
+    `;
+    document.head.appendChild(styleTag);
+
 
     // Function to create a pulse circle
     function createPulseCircle() {
